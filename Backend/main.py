@@ -1,4 +1,5 @@
 import os
+import uvicorn
 from fastapi import FastAPI
 from pydantic import BaseModel
 from dotenv import load_dotenv
@@ -66,3 +67,9 @@ def query_rag(req: QueryRequest):
 @app.get("/")
 def root():
     return {"message": "RAG API is running"}
+
+# Read PORT from environment, default to 8000
+port = int(os.environ.get("PORT", 8000))
+
+if __name__ == "__main__":
+    uvicorn.run("main:app", host="0.0.0.0", port=port, reload=True)
