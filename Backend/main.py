@@ -74,5 +74,4 @@ def root():
     return {"message": "RAG API is running"}
 
 if __name__ == "__main__":
-    port = int(os.environ.get("PORT", 8000))
-    uvicorn.run("main:app", host="0.0.0.0", port=port)
+    print("This file is intended to be run via uvicorn, not directly")
