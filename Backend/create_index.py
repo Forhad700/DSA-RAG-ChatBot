@@ -4,50 +4,52 @@ from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain_community.vectorstores import FAISS
 from langchain_huggingface import HuggingFaceEmbeddings
 
-# Folder where PDFs/TXT files are
-DATA_PATH = "../Knowledge_base"
+CURRENT_DIR = os.path.dirname(os.path.abspath(__file__))
 
-# Folder where FAISS index will be saved
-FAISS_PATH = "../Faiss_index"
+ROOT_DIR = os.path.dirname(CURRENT_DIR)
 
-print("Loading documents...")
+DATA_PATH = os.path.join(ROOT_DIR, "Knowledge_base")
 
-# Load all PDFs
-pdf_loader = DirectoryLoader(
-    DATA_PATH,
-    glob="**/*.pdf",
-    loader_cls=PyPDFLoader
-)
+FAISS_PATH = os.path.join(ROOT_DIR, "Faiss_index")
 
-# Load all TXT files
-txt_loader = DirectoryLoader(
-    DATA_PATH,
-    glob="**/*.txt",
-    loader_cls=TextLoader,
-    loader_kwargs={"encoding": "utf-8"}
-)
+print(f"Checking data path: {DATA_PATH}")
 
-# Combine all documents
-documents = pdf_loader.load() + txt_loader.load()
-print(f"Loaded {len(documents)} documents")
+if not os.path.exists(DATA_PATH):
+    print(f"Error: Folder {DATA_PATH} not found!")
+else:
+    print("Loading documents...")
 
-# Split documents into chunks for embeddings
-text_splitter = RecursiveCharacterTextSplitter(
-    chunk_size=1000,
-    chunk_overlap=150
-)
+    pdf_loader = DirectoryLoader(
+        DATA_PATH,
+        glob="**/*.pdf",
+        loader_cls=PyPDFLoader
+    )
+    txt_loader = DirectoryLoader(
+        DATA_PATH,
+        glob="**/*.txt",
+        loader_cls=TextLoader,
+        loader_kwargs={"encoding": "utf-8"}
+    )
 
-docs = text_splitter.split_documents(documents)
-print(f"Split into {len(docs)} chunks")
+    documents = pdf_loader.load() + txt_loader.load()
+    print(f"Loaded {len(documents)} documents")
 
-# Create embeddings
-print("Creating embeddings (this may take a while)...")
-embeddings = HuggingFaceEmbeddings(model_name="sentence-transformers/all-MiniLM-L6-v2")
+    if len(documents) == 0:
+        print("No documents found. Check your Knowledge_base folder.")
+    else:
+        text_splitter = RecursiveCharacterTextSplitter(
+            chunk_size=1000,
+            chunk_overlap=150
+        )
 
-# Build FAISS index
-db = FAISS.from_documents(docs, embeddings)
+        docs = text_splitter.split_documents(documents)
+        print(f"Split into {len(docs)} chunks")
 
-# Save index
-os.makedirs(FAISS_PATH, exist_ok=True)
-db.save_local(FAISS_PATH)
-print("FAISS index created successfully!")
+        print("Creating embeddings (this may take a while)...")
+        embeddings = HuggingFaceEmbeddings(model_name="sentence-transformers/all-MiniLM-L6-v2")
+
+        db = FAISS.from_documents(docs, embeddings)
+
+        os.makedirs(FAISS_PATH, exist_ok=True)
+        db.save_local(FAISS_PATH)
+        print(f"FAISS index created successfully at: {FAISS_PATH}")
